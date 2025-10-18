@@ -57,6 +57,7 @@ dependencies {
 
     implementation("org.osmdroid:osmdroid-android:6.1.17")
 
+
     //Manejo de permisos
     implementation("com.karumi:dexter:6.2.3")
 
@@ -67,4 +68,5 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
 }

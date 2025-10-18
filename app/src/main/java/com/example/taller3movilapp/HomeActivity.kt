@@ -55,7 +55,7 @@ class HomeActivity : AppCompatActivity() {
             val inputStream = assets.open("locations.json")
             val jsonText = inputStream.bufferedReader().use { it.readText() }
             val jsonObject = JSONObject(jsonText)
-            val locationsArray = jsonObject.getJSONArray("locations") // 👈 nombre correcto del array
+            val locationsArray = jsonObject.getJSONArray("locationsArray")
 
             if (locationsArray.length() == 0) {
                 Toast.makeText(this, "No se encontraron puntos en el archivo JSON.", Toast.LENGTH_SHORT).show()
