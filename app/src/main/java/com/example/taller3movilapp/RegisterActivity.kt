@@ -154,18 +154,19 @@ class RegisterActivity : AppCompatActivity() {
                         email = binding.etEmail.text.toString(),
                         latitude = latitude,
                         longitude = longitude,
-                        imageUrl = uri.toString()
+                        imageUrl = uri.toString(),
+                        status = "disconnected"
                     )
 
                     FirebaseDatabase.getInstance().getReference("users").child(uid).setValue(user)
                     Toast.makeText(this, "Usuario registrado correctamente", Toast.LENGTH_SHORT).show()
                     startActivity(Intent(this, HomeActivity::class.java))
                     finish()
-                }.addOnFailureListener { e ->  // ✅ Agrega esto
+                }.addOnFailureListener { e ->  // Agrega esto
                     Toast.makeText(this, "Error al obtener URL: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
-            .addOnFailureListener { e ->  // ✅ Agrega esto
+            .addOnFailureListener { e ->  // Agrega esto
                 Toast.makeText(this, "Error al subir imagen: ${e.message}", Toast.LENGTH_LONG).show()
             }
     }

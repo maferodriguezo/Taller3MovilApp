@@ -34,6 +34,15 @@
         </activity>
         <activity android:name=".HomeActivity"/>
         <activity android:name=".RegisterActivity"/>
+        <activity
+            android:name=".UsersListActivity"
+            android:label="Usuarios Disponibles"
+            android:parentActivityName=".HomeActivity" />
+
+        <activity
+            android:name=".TrackingActivity"
+            android:label="Seguimiento"
+            android:parentActivityName=".UsersListActivity" />
     </application>
 
 </manifest>

@@ -1,11 +1,17 @@
 package com.example.taller3movilapp
 
 import android.Manifest
+import android.content.Intent
 import android.location.Location
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import org.json.JSONObject
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -22,11 +28,23 @@ class HomeActivity : AppCompatActivity() {
 
     private lateinit var mapView: MapView
     private lateinit var auth: FirebaseAuth
+    private var currentStatus: String = "disconnected"
+    private lateinit var statusMenuItem: MenuItem
+    private lateinit var toolbar: androidx.appcompat.widget.Toolbar
+    private lateinit var tvStatus: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Configuration.getInstance().load(this, getSharedPreferences("osm_prefs", MODE_PRIVATE))
         setContentView(R.layout.activity_home)
+
+        // Configurar Toolbar manual
+        toolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
+        supportActionBar?.title = "Mapa de la App"
+
+        // Referencia al TextView de estado
+        tvStatus = findViewById(R.id.tvStatus)
 
         auth = FirebaseAuth.getInstance()
         mapView = findViewById(R.id.mapView)
@@ -35,17 +53,139 @@ class HomeActivity : AppCompatActivity() {
         mapView.setTileSource(TileSourceFactory.MAPNIK)
         mapView.setMultiTouchControls(true)
         mapView.controller.setZoom(13.5)
-        mapView.controller.setCenter(GeoPoint(4.65, -74.08)) // Bogotá
+        mapView.controller.setCenter(GeoPoint(4.65, -74.08))
+
+        // Cargar estado inicial desde Firebase
+        loadUserStatus()
 
         // Cargar los puntos desde el JSON local
         loadLocationsFromJSON()
 
         // Mostrar ubicación actual
         requestUserLocation()
+    }
 
-        // Cerrar sesión
-        findViewById<android.widget.Button>(R.id.btnLogout).setOnClickListener {
+    // Muestra el menu
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        statusMenuItem = menu.findItem(R.id.menu_status)
+        updateStatusMenuTitle()
+        return true
+    }
+
+    // Clicks del menu
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.menu_status -> {
+                toggleStatus()
+                true
+            }
+            R.id.menu_users -> {
+                // Navegar a la lista de usuarios disponibles
+                val intent = Intent(this, UsersListActivity::class.java)
+                startActivity(intent)
+                true
+            }
+            R.id.menu_logout -> {
+                logout()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun loadUserStatus() {
+        val userId = auth.currentUser?.uid
+        if (userId != null) {
+            FirebaseDatabase.getInstance().getReference("users")
+                .child(userId)
+                .child("status")
+                .get()
+                .addOnSuccessListener { snapshot ->
+                    snapshot.getValue(String::class.java)?.let { status ->
+                        currentStatus = status
+                        updateStatusDisplay()
+                    }
+                }
+        }
+    }
+
+    private fun toggleStatus() {
+        currentStatus = if (currentStatus == "disconnected") {
+            "available"
+        } else {
+            "disconnected"
+        }
+
+        updateStatusDisplay()
+        updateStatusInDatabase()
+
+        val statusMessage = if (currentStatus == "available") {
+            "Ahora estás disponible"
+        } else {
+            "Ahora estás desconectado"
+        }
+
+        Toast.makeText(this, statusMessage, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun updateStatusDisplay() {
+        if (currentStatus == "available") {
+            tvStatus.text = "Disponible"
+            tvStatus.setBackgroundColor(ContextCompat.getColor(this, android.R.color.holo_green_dark))
+            tvStatus.setCompoundDrawablesWithIntrinsicBounds(
+                ContextCompat.getDrawable(this, android.R.drawable.presence_online),
+                null, null, null
+            )
+        } else {
+            tvStatus.text = "Desconectado"
+            tvStatus.setBackgroundColor(ContextCompat.getColor(this, android.R.color.holo_red_dark))
+            tvStatus.setCompoundDrawablesWithIntrinsicBounds(
+                ContextCompat.getDrawable(this, android.R.drawable.presence_offline),
+                null, null, null
+            )
+        }
+    }
+
+    private fun updateStatusMenuTitle() {
+        val statusText = if (currentStatus == "available") {
+            "Estado: Disponible"
+        } else {
+            "Estado: Desconectado"
+        }
+        statusMenuItem.title = statusText
+    }
+
+    private fun updateStatusInDatabase() {
+        val userId = auth.currentUser?.uid
+        if (userId != null) {
+            val userRef = FirebaseDatabase.getInstance().getReference("users").child(userId)
+            userRef.child("status").setValue(currentStatus)
+                .addOnSuccessListener {
+                    updateStatusMenuTitle()
+                }
+        }
+    }
+
+    private fun logout() {
+        val userId = auth.currentUser?.uid
+        if (userId != null) {
+            FirebaseDatabase.getInstance().getReference("users")
+                .child(userId)
+                .child("status")
+                .setValue("disconnected")
+                .addOnCompleteListener {
+                    auth.signOut()
+                    val intent = Intent(this, MainActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(intent)
+                    finish()
+                }
+        } else {
             auth.signOut()
+            val intent = Intent(this, MainActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
             finish()
         }
     }
@@ -83,7 +223,6 @@ class HomeActivity : AppCompatActivity() {
             e.printStackTrace()
         }
     }
-
 
     private fun requestUserLocation() {
         Dexter.withContext(this)
