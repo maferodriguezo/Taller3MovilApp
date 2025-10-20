@@ -11,7 +11,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.*
 import org.json.JSONObject
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -33,39 +33,34 @@ class HomeActivity : AppCompatActivity() {
     private lateinit var toolbar: androidx.appcompat.widget.Toolbar
     private lateinit var tvStatus: TextView
 
+    private var availabilityListener: ValueEventListener? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Configuration.getInstance().load(this, getSharedPreferences("osm_prefs", MODE_PRIVATE))
+        Configuration.getInstance().userAgentValue = packageName
         setContentView(R.layout.activity_home)
 
-        // Configurar Toolbar manual
         toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.title = "Mapa de la App"
 
-        // Referencia al TextView de estado
         tvStatus = findViewById(R.id.tvStatus)
 
         auth = FirebaseAuth.getInstance()
         mapView = findViewById(R.id.mapView)
-
-        // Configuración básica del mapa
         mapView.setTileSource(TileSourceFactory.MAPNIK)
         mapView.setMultiTouchControls(true)
         mapView.controller.setZoom(13.5)
         mapView.controller.setCenter(GeoPoint(4.65, -74.08))
 
-        // Cargar estado inicial desde Firebase
         loadUserStatus()
-
-        // Cargar los puntos desde el JSON local
         loadLocationsFromJSON()
-
-        // Mostrar ubicación actual
         requestUserLocation()
+
+        startAvailabilityListener()
     }
 
-    // Muestra el menu
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
         statusMenuItem = menu.findItem(R.id.menu_status)
@@ -73,7 +68,6 @@ class HomeActivity : AppCompatActivity() {
         return true
     }
 
-    // Clicks del menu
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.menu_status -> {
@@ -81,7 +75,6 @@ class HomeActivity : AppCompatActivity() {
                 true
             }
             R.id.menu_users -> {
-                // Navegar a la lista de usuarios disponibles
                 val intent = Intent(this, UsersListActivity::class.java)
                 startActivity(intent)
                 true
@@ -269,5 +262,60 @@ class HomeActivity : AppCompatActivity() {
         marker.icon = resources.getDrawable(android.R.drawable.ic_menu_mylocation, theme)
         mapView.overlays.add(marker)
         mapView.controller.setCenter(geoPoint)
+    }
+
+    private fun startAvailabilityListener() {
+        val currentUserId = auth.currentUser?.uid ?: return
+        val usersRef = FirebaseDatabase.getInstance().getReference("users")
+
+        val lastStatus = mutableMapOf<String, String?>()
+
+        availabilityListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                for (userSnapshot in snapshot.children) {
+                    val userId = userSnapshot.key ?: continue
+                    val user = userSnapshot.getValue(User::class.java) ?: continue
+
+                    val oldStatus = lastStatus[userId]
+                    val newStatus = user.status
+                    lastStatus[userId] = newStatus
+
+                    if (userId == currentUserId) continue
+
+                    if (newStatus == "available" && oldStatus != "available") {
+                        val fullName = listOfNotNull(user.firstName, user.lastName)
+                            .joinToString(" ")
+                            .ifEmpty { user.email ?: "Usuario" }
+                        Toast.makeText(
+                            this@HomeActivity,
+                            "$fullName se conectó",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+
+                    if (newStatus != "available" && oldStatus == "available") {
+                        val fullName = listOfNotNull(user.firstName, user.lastName)
+                            .joinToString(" ")
+                            .ifEmpty { user.email ?: "Usuario" }
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(this@HomeActivity, "Error escuchando usuarios: ${error.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        usersRef.addValueEventListener(availabilityListener!!)
+    }
+
+    private fun stopAvailabilityListener() {
+        val usersRef = FirebaseDatabase.getInstance().getReference("users")
+        availabilityListener?.let { usersRef.removeEventListener(it) }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stopAvailabilityListener()
     }
 }

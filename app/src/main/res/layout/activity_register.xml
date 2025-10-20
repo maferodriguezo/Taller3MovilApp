@@ -86,7 +86,6 @@
 
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Botón para obtener ubicación -->
         <Button
             android:id="@+id/btnGetLocation"
             android:layout_width="match_parent"
@@ -95,7 +94,6 @@
             android:layout_marginBottom="16dp"
             android:backgroundTint="@android:color/holo_green_dark" />
 
-        <!-- Campos para mostrar latitud y longitud -->
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

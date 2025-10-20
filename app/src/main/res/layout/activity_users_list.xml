@@ -1,32 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:fitsSystemWindows="true">
+    android:background="#F5F5F5"
+    tools:context=".UsersListActivity">
 
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorPrimary"
-        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
-        android:title="Usuarios Disponibles" />  <!-- CAMBIADO: app:title por android:title -->
-
-    <TextView
-        android:id="@+id/tvEmptyList"
+    <LinearLayout
+        android:id="@+id/headerLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="No hay usuarios disponibles"
-        android:textSize="18sp"
+        android:orientation="vertical"
+        android:background="?attr/colorPrimary"
+        android:elevation="4dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Usuarios Disponibles"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:padding="16dp"
+            android:textColor="@android:color/white"
+            android:gravity="center" />
+    </LinearLayout>
+
+    <!-- Lista de usuarios -->
+    <ListView
+        android:id="@+id/listViewUsers"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/headerLayout"
+        android:divider="@android:color/darker_gray"
+        android:dividerHeight="1dp"
+        android:padding="8dp"
+        android:clipToPadding="false"
+        android:scrollbars="vertical" />
+
+    <LinearLayout
+        android:id="@+id/llNoUsers"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/headerLayout"
+        android:orientation="vertical"
         android:gravity="center"
         android:padding="32dp"
-        android:visibility="gone" />
+        android:visibility="gone">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvUsers"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        <ImageView
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:src="@android:drawable/ic_menu_gallery"
+            android:alpha="0.3"
+            android:layout_marginBottom="24dp" />
 
-</LinearLayout>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No hay usuarios disponibles"
+            android:textSize="18sp"
+            android:textColor="#757575"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Los usuarios aparecerán aquí cuando cambien su estado a disponible"
+            android:textSize="14sp"
+            android:textColor="#9E9E9E"
+            android:gravity="center" />
+    </LinearLayout>
+
+</RelativeLayout>

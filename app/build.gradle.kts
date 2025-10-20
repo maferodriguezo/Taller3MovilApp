@@ -62,6 +62,7 @@ dependencies {
     implementation("com.karumi:dexter:6.2.3")
 
     implementation("com.github.Dhaval2404:ImagePicker:v2.1")
+    implementation("com.github.bumptech.glide:glide:4.16.0")
 
     implementation(libs.play.services.cast.framework)
 

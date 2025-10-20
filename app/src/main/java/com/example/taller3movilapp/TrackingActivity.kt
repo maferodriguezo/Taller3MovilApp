@@ -330,7 +330,6 @@ class TrackingActivity : AppCompatActivity() {
             val centerLon = (markers[0].longitude + markers[1].longitude) / 2
             val centerPoint = GeoPoint(centerLat, centerLon)
 
-            // Calcular distancia para ajustar zoom
             val distance = markers[0].distanceToAsDouble(markers[1])
             val zoomLevel = when {
                 distance > 20000 -> 9.0
@@ -344,7 +343,6 @@ class TrackingActivity : AppCompatActivity() {
             mapView.controller.setCenter(centerPoint)
             mapView.controller.setZoom(zoomLevel)
 
-            // DIAGNÓSTICO: Mostrar ajuste de mapa
             println("Mapa ajustado - Centro: $centerLat, $centerLon - Zoom: $zoomLevel")
         }
 
